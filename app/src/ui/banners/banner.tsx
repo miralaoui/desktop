@@ -14,6 +14,7 @@ interface IBannerState {
 }
 
 export class Banner extends React.Component<IBannerProps, IBannerState> {
+  private banner = React.createRef<HTMLDivElement>()
   private visibilityTimeoutId: number | null = null
   private contentTimeoutId: number | null = null
 
@@ -32,6 +33,7 @@ export class Banner extends React.Component<IBannerProps, IBannerState> {
         className="banner"
         aria-atomic="true"
         role="alert"
+        ref={this.banner}
       >
         <div className="contents">{this.props.children}</div>
         {this.state.contentSuffix}
@@ -66,7 +68,9 @@ export class Banner extends React.Component<IBannerProps, IBannerState> {
     }
 
     this.contentTimeoutId = window.setTimeout(() => {
-      this.setState({ contentSuffix: '\u00A0\u00A0' })
+      this.banner.current?.querySelector('button')?.focus()
+      console.log('focused the button')
+      // this.setState({ contentSuffix: '\u00A0\u00A0' })
     }, 200)
   }
 
