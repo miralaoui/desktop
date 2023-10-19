@@ -12,6 +12,7 @@ export class Banner extends React.Component<IBannerProps, {}> {
   private contents = React.createRef<HTMLDivElement>()
   private closeButton = React.createRef<HTMLButtonElement>()
   private focusTimeoutId: number | null = null
+  private dismissTimeoutId: number | null = null
 
   public render() {
     return (
@@ -20,10 +21,9 @@ export class Banner extends React.Component<IBannerProps, {}> {
         className="banner"
         aria-atomic="true"
         role="alert"
+        ref={this.contents}
       >
-        <div className="contents" ref={this.contents}>
-          {this.props.children}
-        </div>
+        <div className="contents">{this.props.children}</div>
         {this.renderCloseButton()}
       </div>
     )
@@ -49,6 +49,36 @@ export class Banner extends React.Component<IBannerProps, {}> {
     )
   }
 
+  private onFocusIn = () => {
+    if (this.dismissTimeoutId !== null) {
+      window.clearTimeout(this.dismissTimeoutId)
+      this.dismissTimeoutId = null
+    }
+  }
+
+  private onFocusOut = async (event: FocusEvent) => {
+    if (
+      event.relatedTarget &&
+      this.contents.current?.contains(event.relatedTarget as Node)
+    ) {
+      return
+    }
+
+    this.dismissTimeoutId = window.setTimeout(() => {
+      this.props.onDismissed()
+    }, 5000)
+  }
+
+  private addFocusListeners() {
+    this.contents.current?.addEventListener('focusin', this.onFocusIn)
+    this.contents.current?.addEventListener('focusout', this.onFocusOut)
+  }
+
+  private removeFocusListeners() {
+    this.contents.current?.removeEventListener('focusout', this.onFocusOut)
+    this.contents.current?.removeEventListener('focusout', this.onFocusIn)
+  }
+
   public componentDidMount(): void {
     this.focusTimeoutId = window.setTimeout(() => {
       if (this.closeButton.current) {
@@ -57,11 +87,15 @@ export class Banner extends React.Component<IBannerProps, {}> {
         this.contents.current?.querySelector('a')?.focus()
       }
     }, 200)
+
+    this.addFocusListeners()
   }
 
   public componentWillUnmount(): void {
     if (this.focusTimeoutId !== null) {
       window.clearTimeout(this.focusTimeoutId)
     }
+
+    this.removeFocusListeners()
   }
 }
